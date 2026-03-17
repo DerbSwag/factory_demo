@@ -45,14 +45,29 @@ Key capabilities:
 * Export current dataset (filtered or full)
 * Useful for HR reporting and audit
 
----
+### 📅 Date Selection
+- Select a specific date for attendance view  
+- Designed to support daily reporting workflows  
+
+### 📥 Smart Export Naming
+- Export file name automatically generated based on:
+  - Selected date  
+  - Selected department  
+- Example: Attendance_2026-03-17_WH.xlsx
+
+### 🎨 UI Enhancements
+- Improved layout and spacing  
+- Clear KPI summary display  
+- Responsive filtering controls  
 
 ### ⚡ Demo Mode
 
 * Runs without database connection
 * Uses mock data designed to simulate real-world scenarios
 * Safe for public GitHub and presentations
-
+- Uses generated mock data (Faker)
+- No database required
+- Designed for safe demonstration and testing
 ---
 
 ## 🏭 Business Logic Simulation
