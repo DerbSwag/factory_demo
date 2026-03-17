@@ -63,11 +63,10 @@ Key capabilities:
 ### ⚡ Demo Mode
 
 * Runs without database connection
-* Uses mock data designed to simulate real-world scenarios
+* Uses generated mock data (Faker) to simulate real-world scenarios
+* No database required
 * Safe for public GitHub and presentations
-- Uses generated mock data (Faker)
-- No database required
-- Designed for safe demonstration and testing
+* Designed for safe demonstration and testing
 ---
 
 ## 🏭 Business Logic Simulation
@@ -160,13 +159,13 @@ Mock data simulates a real organization structure:
 ## 📂 Project Structure
 
 ```id="o1m6gx"
+```
 factory_demo/
 │
 ├── factory_demo.py      # Main application (Demo mode)
 ├── requirements.txt
 ├── README.md
 ```
-
 ---
 
 ## ⚙️ Installation
