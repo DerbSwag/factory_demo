@@ -11,10 +11,11 @@ This project demonstrates how an attendance system processes employee punch reco
 
 Key capabilities:
 
-* Attendance tracking (Present / Absent / Overtime)
+* Attendance tracking (Present / Absent / Overtime / Irregular)
 * Department-based filtering
+* Date-based filtering (last 7 days)
 * Search by employee name or ID
-* Excel export for reporting
+* Excel export with error handling
 * Demo mode with realistic mock data (no database required)
 
 ---
@@ -27,151 +28,129 @@ Key capabilities:
 
   * ✅ Present
   * ❌ Absent
-  * 🔴 Overtime
-* KPI summary for quick insights
+  * 🔴 Overtime (OT)
+  * ⚠️ Irregular
+* Real-time KPI summary: Total / Present / Absent / OT
 
 ---
 
 ### 🔍 Filtering & Search
 
-* Filter employees by department
-* Search by name or employee ID
-* Real-time update of table and KPIs
+* Filter by department
+* Filter by date (calendar picker — connected to data)
+* Search by employee name or ID
+* All filters work together in real-time
 
 ---
 
-### 📥 Export to Excel
+### 📅 Smart Export
 
-* Export current dataset (filtered or full)
-* Useful for HR reporting and audit
+* Export filtered data to Excel (`.xlsx`)
+* Filename auto-generated: `Attendance_{date}_{dept}.xlsx`
+* Error handling for locked files and write failures
 
-### 📅 Date Selection
-- Select a specific date for attendance view  
-- Designed to support daily reporting workflows  
-
-### 📥 Smart Export Naming
-- Export file name automatically generated based on:
-  - Selected date  
-  - Selected department  
-- Example: Attendance_2026-03-17_WH.xlsx
-
-### 🎨 UI Enhancements
-- Improved layout and spacing  
-- Clear KPI summary display  
-- Responsive filtering controls  
+---
 
 ### ⚡ Demo Mode
 
 * Runs without database connection
-* Uses generated mock data (Faker) to simulate real-world scenarios
-* No database required
+* Generates 40 mock employees with random attendance patterns
+* Data spans last 7 days for realistic date filtering
 * Safe for public GitHub and presentations
-* Designed for safe demonstration and testing
+
 ---
 
-## 🏭 Business Logic Simulation
-
-This system uses simplified and general attendance rules.
+## 🏭 Business Logic
 
 ### 🕘 Working Hours
 
-* Standard working hours: **08:00 – 17:00**
+Configured as constants in `logic.py`:
 
----
+```python
+WORK_START = time(8, 0)   # 08:00
+WORK_END   = time(17, 0)  # 17:00
+```
 
 ### 🔴 Overtime (OT)
 
-Overtime is calculated based on the **last recorded punch time**.
+Calculated from the **last recorded punch time**:
 
 ```
 OT = Last Punch Time - 17:00
 ```
 
-**Example:**
+Example:
 
-```id="f5qk9p"
-08:00, 12:00, 13:00, 18:30
-→ OT = 1.5 hours
 ```
-
----
-
-### ❌ Absent
-
-* No punch records → marked as Absent
-
----
-
-### ⚠️ Irregular Data
-
-* Incomplete or inconsistent punch records may be flagged
-* Examples:
-
-  * Only one punch
-  * Duplicate timestamps
-  * Missing expected entries
-
----
+08:00, 12:00, 13:00, 18:30  →  OT = 1.5 hours
+```
 
 ### 📊 Status Logic
 
-| Condition            | Status       |
-| -------------------- | ------------ |
+| Condition            | Status        |
+|----------------------|---------------|
 | No records           | ❌ Absent     |
+| Only 1 punch         | ⚠️ Irregular  |
+| Last punch > 17:00   | 🔴 OT         |
 | Valid records, no OT | ✅ Present    |
-| Last punch > 17:00   | 🔴 Overtime  |
-| Incomplete pattern   | ⚠️ Irregular |
 
 ---
 
-## 🧪 Demo Data Design
+## 🧪 Demo Data
 
-Mock data simulates a real organization structure:
+Mock data simulates a real organization with 13 departments:
 
-### Departments
+| Group       | Departments         |
+|-------------|---------------------|
+| Warehouse   | WH                  |
+| Production  | PD, PE              |
+| Quality     | QA, QC              |
+| Engineering | EN, RD              |
+| Office      | IT, HR, AC, CS      |
+| Purchasing  | PUR                 |
+| Safety      | SAF                 |
 
-* Warehouse (WH)
-* Production (PD, PE)
-* Quality (QA, QC)
-* Engineering (EN, RD)
-* Office (IT, HR, AC, Sales)
-* Safety (SAF)
-* Purchasing (PUR)
+Punch patterns generated:
 
-### Scenarios Covered
-
-* Normal working day
-* Overtime work
-* Absence
-* Irregular punch behavior
+* **Normal** — 4 punches, no OT
+* **OT** — 4 punches, last punch after 17:00
+* **Absent** — no punches
+* **Irregular** — single punch only
 
 ---
 
 ## 🖥️ Tech Stack
 
-* Python 3
-* Tkinter (GUI)
-* Pandas (Data processing)
-* Faker (Mock data generation)
+| Component      | Technology          |
+|----------------|---------------------|
+| Language       | Python 3.11+        |
+| GUI            | Tkinter + tkcalendar|
+| Data           | Pandas >= 2.0       |
+| Mock Data      | Faker >= 24.0       |
+| Excel Export   | openpyxl >= 3.1     |
+| Testing        | pytest >= 8.0       |
 
 ---
 
 ## 📂 Project Structure
 
-```id="o1m6gx"
 ```
 factory_demo/
-│
-├── factory_demo.py      # Main application (Demo mode)
-├── requirements.txt
-├── README.md
+├── factory_demo.py       # GUI application (Tkinter)
+├── logic.py              # Business logic: OT calculation, status, mock data
+├── requirements.txt      # Dependencies
+├── tests/
+│   ├── __init__.py
+│   └── test_logic.py     # Unit tests (12 tests)
+└── README.md
 ```
+
 ---
 
 ## ⚙️ Installation
 
 ```bash
-pip install pandas faker
+pip install -r requirements.txt
 ```
 
 ---
@@ -181,6 +160,16 @@ pip install pandas faker
 ```bash
 python factory_demo.py
 ```
+
+---
+
+## 🧪 Run Tests
+
+```bash
+pytest tests/ -v
+```
+
+Expected output: **12 passed**
 
 ---
 
@@ -194,6 +183,7 @@ python factory_demo.py
 
 * No real employee data
 * No database credentials
+* No API keys
 * Fully safe for public sharing
 
 ---
@@ -214,6 +204,7 @@ python factory_demo.py
 * Real database integration
 * Advanced analytics (charts, trends)
 * Shift-based attendance tracking
+* Logging and audit trail
 
 ---
 
@@ -223,10 +214,3 @@ python factory_demo.py
 IT Support / System Administration / Aspiring Full Stack Developer
 
 GitHub: https://github.com/DerbSwag
-
----
-
-## ⭐ Notes
-
-This project focuses on practical system design and business logic simulation,
-bridging the gap between simple scripts and real-world enterprise applications.
