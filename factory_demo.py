@@ -3,7 +3,7 @@ from tkinter import ttk, filedialog, messagebox
 from tkcalendar import DateEntry
 
 import pandas as pd
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import random
 from faker import Faker
 
@@ -26,11 +26,13 @@ DEPTS = [
 # ==============================
 def generate_mock_data(n=40):
     data = []
+    today = datetime.today().date()
 
     for i in range(n):
         emp_id = str(1000 + i)
         name = fake.name()
         dept = random.choice(DEPTS)
+        date = today - timedelta(days=random.randint(0, 6))
 
         pattern = random.choice(['normal','ot','absent','irregular'])
 
@@ -50,6 +52,7 @@ def generate_mock_data(n=40):
             "EMP_DEPT": dept,
             "EMP_ID": emp_id,
             "EMP_NAME": name,
+            "DATE": date,
             "ALL": ",".join(punches)
         })
 
@@ -163,6 +166,8 @@ class DemoApp:
 
         self.date_picker = DateEntry(filter_frame, width=12)
         self.date_picker.pack(side="left")
+        self.date_picker.bind("<<DateEntrySelected>>",
+                              lambda e: self.apply_filter())
 
         # ===== KPI =====
         self.kpi_label = tk.Label(self.root, font=("Segoe UI", 11))
@@ -209,6 +214,9 @@ class DemoApp:
                 df['EMP_NAME'].str.lower().str.contains(keyword) |
                 df['EMP_ID'].str.contains(keyword)
             ]
+
+        selected_date = self.date_picker.get_date()
+        df = df[df['DATE'] == selected_date]
 
         self.filtered_df = df
         self.render()
