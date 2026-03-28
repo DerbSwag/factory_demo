@@ -3,100 +3,15 @@ from tkinter import ttk, filedialog, messagebox
 from tkcalendar import DateEntry
 
 import pandas as pd
-from datetime import datetime, time
-import random
-from faker import Faker
+from logic import (
+    generate_mock_data,
+    MOCK_EMPLOYEE_COUNT,
+)
 
 # ==============================
 # CONFIG
 # ==============================
 USE_DEMO_MODE = True
-
-fake = Faker()
-
-DEPTS = [
-    'WH','PD','PE','QA','QC',
-    'EN','RD',
-    'IT','HR','AC','CS',
-    'PUR','SAF'
-]
-
-# ==============================
-# MOCK DATA
-# ==============================
-def generate_mock_data(n=40):
-    data = []
-
-    for i in range(n):
-        emp_id = str(1000 + i)
-        name = fake.name()
-        dept = random.choice(DEPTS)
-
-        pattern = random.choice(['normal','ot','absent','irregular'])
-
-        if pattern == 'absent':
-            punches = []
-
-        elif pattern == 'normal':
-            punches = ["08:00:00","12:00:00","13:00:00","17:00:00"]
-
-        elif pattern == 'ot':
-            punches = ["08:00:00","12:00:00","13:00:00","18:30:00"]
-
-        else:
-            punches = ["08:05:00"]  # irregular
-
-        data.append({
-            "EMP_DEPT": dept,
-            "EMP_ID": emp_id,
-            "EMP_NAME": name,
-            "ALL": ",".join(punches)
-        })
-
-    df = pd.DataFrame(data)
-    df[['PUNCH_COUNT','OT_TIME','STATUS']] = df.apply(process_row, axis=1)
-
-    return df
-
-
-# ==============================
-# BUSINESS LOGIC
-# ==============================
-def calculate_ot(all_str):
-    if not all_str:
-        return 0
-
-    times = [datetime.strptime(t, "%H:%M:%S") for t in all_str.split(",") if t]
-
-    if not times:
-        return 0
-
-    last_time = times[-1].time()
-    ot_start = time(17, 0)
-
-    if last_time > ot_start:
-        delta = datetime.combine(datetime.today(), last_time) - \
-                datetime.combine(datetime.today(), ot_start)
-        return round(delta.total_seconds() / 3600, 1)
-
-    return 0
-
-
-def process_row(row):
-    punches = row['ALL'].split(',') if row['ALL'] else []
-    count = len(punches)
-    ot = calculate_ot(row['ALL'])
-
-    if count == 0:
-        status = "❌ Absent"
-    elif count < 2:
-        status = "⚠️ Irregular"
-    elif ot > 0:
-        status = "🔴 OT"
-    else:
-        status = "✅ Present"
-
-    return pd.Series([count, ot, status])
 
 
 # ==============================
@@ -104,7 +19,7 @@ def process_row(row):
 # ==============================
 class DemoApp:
 
-    def __init__(self, root):
+    def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("Factory Attendance Dashboard")
         self.root.geometry("1200x720")
@@ -115,7 +30,8 @@ class DemoApp:
         self.build_ui()
         self.load_data()
 
-    def build_ui(self):
+    def build_ui(self) -> None:
+        """สร้าง UI ทั้งหมด: header, filter, KPI, table"""
 
         # ===== HEADER =====
         header = tk.Frame(self.root)
@@ -125,7 +41,6 @@ class DemoApp:
                  font=("Segoe UI", 18, "bold")).pack(side="left")
 
         mode = "DEMO MODE" if USE_DEMO_MODE else "LIVE MODE"
-
         tk.Label(header, text=f"⚡ {mode}",
                  fg="orange",
                  font=("Segoe UI", 10, "bold")).pack(side="left", padx=10)
@@ -149,7 +64,7 @@ class DemoApp:
                                        width=10)
         self.dept_combo.pack(side="left", padx=5)
         self.dept_combo.bind("<<ComboboxSelected>>",
-                            lambda e: self.apply_filter())
+                             lambda e: self.apply_filter())
 
         tk.Label(filter_frame, text="Search:").pack(side="left", padx=10)
 
@@ -163,14 +78,15 @@ class DemoApp:
 
         self.date_picker = DateEntry(filter_frame, width=12)
         self.date_picker.pack(side="left")
+        self.date_picker.bind("<<DateEntrySelected>>",
+                              lambda e: self.apply_filter())
 
         # ===== KPI =====
         self.kpi_label = tk.Label(self.root, font=("Segoe UI", 11))
         self.kpi_label.pack(pady=8)
 
         # ===== TABLE =====
-        cols = ("DEPT","ID","NAME","STATUS","PUNCH","OT")
-
+        cols = ("DEPT", "ID", "NAME", "STATUS", "PUNCH", "OT")
         self.tree = ttk.Treeview(self.root, columns=cols, show="headings")
 
         for c in cols:
@@ -183,20 +99,20 @@ class DemoApp:
 
         self.tree.pack(fill="both", expand=True, padx=10, pady=10)
 
-    def load_data(self):
-
+    def load_data(self) -> None:
+        """โหลด/รีเฟรชข้อมูลพนักงานและอัปเดต dropdown แผนก"""
         if USE_DEMO_MODE:
-            self.df = generate_mock_data(40)
+            self.df = generate_mock_data(MOCK_EMPLOYEE_COUNT)
 
         dept_list = ["ALL"] + sorted(self.df['EMP_DEPT'].unique())
         self.dept_combo['values'] = dept_list
         self.dept_combo.set("ALL")
 
         self.filtered_df = self.df.copy()
-        self.render()
+        self.apply_filter()
 
-    def apply_filter(self):
-
+    def apply_filter(self) -> None:
+        """กรองข้อมูลตาม dept, keyword และ date ที่เลือก"""
         df = self.df.copy()
 
         dept = self.dept_var.get()
@@ -210,15 +126,17 @@ class DemoApp:
                 df['EMP_ID'].str.contains(keyword)
             ]
 
+        selected_date = self.date_picker.get_date()
+        df = df[df['DATE'] == selected_date]
+
         self.filtered_df = df
         self.render()
 
-    def render(self):
-
+    def render(self) -> None:
+        """อัปเดตตารางและ KPI จาก filtered_df ปัจจุบัน"""
         self.tree.delete(*self.tree.get_children())
 
         df = self.filtered_df
-
         total = len(df)
         present = len(df[df['STATUS'] == "✅ Present"])
         absent = len(df[df['STATUS'] == "❌ Absent"])
@@ -238,28 +156,35 @@ class DemoApp:
                 f"{r['OT_TIME']} hr" if r['OT_TIME'] else "-"
             ))
 
-    def export_excel(self):
-
+    def export_excel(self) -> None:
+        """Export ข้อมูลที่กรองแล้วเป็นไฟล์ Excel พร้อม error handling"""
         if self.filtered_df.empty:
-            messagebox.showwarning("Warning", "No data")
+            messagebox.showwarning("Warning", "No data to export")
             return
 
         selected_date = self.date_picker.get_date().strftime("%Y-%m-%d")
         dept = self.dept_var.get() or "ALL"
-
         filename = f"Attendance_{selected_date}_{dept}.xlsx"
 
         path = filedialog.asksaveasfilename(
             initialfile=filename,
             defaultextension=".xlsx",
-            filetypes=[("Excel files","*.xlsx")]
+            filetypes=[("Excel files", "*.xlsx")]
         )
 
         if not path:
             return
 
-        self.filtered_df.to_excel(path, index=False)
-        messagebox.showinfo("Success", f"Saved: {filename}")
+        try:
+            self.filtered_df.to_excel(path, index=False)
+            messagebox.showinfo("Success", f"Saved: {filename}")
+        except PermissionError:
+            messagebox.showerror(
+                "Export Failed",
+                f"ไม่สามารถบันทึกได้ กรุณาปิดไฟล์ '{filename}' ก่อนแล้วลองใหม่"
+            )
+        except Exception as e:
+            messagebox.showerror("Export Failed", f"เกิดข้อผิดพลาด: {e}")
 
 
 # ==============================
