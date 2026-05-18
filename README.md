@@ -1,10 +1,23 @@
-# 🏭 Factory Attendance Dashboard (Demo)
+﻿# 🏭 Factory Attendance Dashboard (Demo)
 
 A production-style attendance dashboard that simulates employee time tracking in a manufacturing environment.
 Designed for portfolio demonstration, system design showcase, and interview presentation.
 
 ---
 
+
+## 📈 Results
+
+| Metric | Value |
+|--------|-------|
+| Unit tests | **12 passed** (pytest) |
+| Mock employees | **40** across **13 departments** |
+| Date range | Last **7 days** (realistic filtering) |
+| Status detection | 4 types (Present, Absent, OT, Irregular) |
+| OT calculation | Automatic from punch records |
+| Export | Excel with auto-generated filename |
+
+---
 ## 🚀 Overview
 
 This project demonstrates how an attendance system processes employee punch records and generates actionable insights.
