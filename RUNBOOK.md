@@ -18,7 +18,7 @@
 ### 1. Run Application
 
 ```bash
-python main.py
+python factory_demo.py
 ```
 
 ### 2. Run Tests
